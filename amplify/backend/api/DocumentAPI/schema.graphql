@@ -1,0 +1,8 @@
+type Document @model {
+  id: ID!
+  clientId: ID!
+  name: String!
+  description: String
+  expDate: AWSDateTime!
+  remDate: AWSDateTime!
+}
