@@ -20,17 +20,19 @@ import useLinking from './navigation/useLinking';
 
 const Stack = createStackNavigator();
 
+const CLIENT_ID = uuid()
+
 class App extends React.Component {
   // define some state to hold the data returned from the API
   state = {
-    documents: []
+    name: '', description: '', expDate: '', remDate: '', documents: []
   }
 
   // execute the query in componentDidMount
   async componentDidMount() {
     try {
       const documentData = await API.graphql(graphqlOperation(ListDocuments))
-      console.log('talkData:', DocumentData)
+      console.log('documentData:', documentData)
       this.setState({
         documents: documentData.data.listDocuments.items
       })
@@ -38,43 +40,72 @@ class App extends React.Component {
       console.log('error fetching talks...', err)
     }
   }
+  createDocument = async() => {
+    const { name, description, expDate, remDate } = this.state
+    if (name === '' || description === '' || expDate === '' || remDate === '') return
+
+    const document = { name, description, expDate, remDate, clientId: CLIENT_ID }
+    const documents = [...this.state.documents, document]
+    this.setState({
+      documents, name: '', description: '', expDate: '', remDate: ''
+    })
+
+    try {
+      await API.graphql(graphqlOperation(CreateDocument, { input: document }))
+      console.log('item created!')
+    } catch (err) {
+      console.log('error creating document...', err)
+    }
+  }
+  onChange = (event) => {
+    this.setState({
+      [event.target.name]: event.target.value
+    })
+  }
   render() {
     return (
       <>
+        <input
+          name='name'
+          onChange={this.onChange}
+          value={this.state.name}
+          placeholder='name'
+        />
+        <input
+          name='description'
+          onChange={this.onChange}
+          value={this.state.description}
+          placeholder='description'
+        />
+        <input
+          name='expDate'
+          onChange={this.onChange}
+          value={this.state.expDate}
+          placeholder='expDate'
+        />
+        <input
+          name='remDate'
+          onChange={this.onChange}
+          value={this.state.remDate}
+          placeholder='remDate'
+        />
+        <button onClick={this.createDocument}>Create Document</button>
         {
-          <View style={styles.container}>
-          <TextInput
-            style={styles.input}
-            value={this.state.title}
-            onChangeText={val => this.onChangeText('title', val)}
-            placeholder="What do you want to track?"
-          />
-          <TextInput
-            style={styles.input}
-            value={this.state.author}
-            onChangeText={val => this.onChangeText('author', val)}
-            placeholder="Who does it belong to?"
-          />
-          <TextInput
-            style={styles.input}
-            value={this.state.expDate}
-            onChangeText={val => this.onChangeText('expDate', val)}
-            placeholder="When does it expire?"
-          />
-          <Button onPress={this.addBook} title="Add to Track-It" color="#eeaa55" />
-          {this.state.documents.map((book, index) => (
-            <View key={index} style={styles.book}>
-              <Text style={styles.title}>{book.title}</Text>
-              <Text style={styles.author}>{book.author}</Text>
-              <Text style={styles.expDate}>{book.expDate}</Text>
-            </View>
-          ))}
-        </View>
+          this.state.documents.map((document, index) => (
+            <div key={index}>
+              <h5>{document.name}</h5>
+              <p>{document.description}</p>
+              <p>{document.expDate}</p>
+              <p>{document.remDate}</p>
+            </div>
+          ))
         }
       </>
     )
   }
 }
+
+
 
 export default withAuthenticator(App, {
   includeGreetings: true
